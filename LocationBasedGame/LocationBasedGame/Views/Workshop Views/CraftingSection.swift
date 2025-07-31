@@ -12,9 +12,28 @@ import SwiftUI
 // --- 1. CraftingSection Struct ---
 // (This was previously inside ForgeActionsView)
 struct CraftingSection: Identifiable {
-    let id = UUID()
+  let id: String        // ← now deterministic
+  let title: String
+  let components: [ComponentType]
+
+  init(title: String, components: [ComponentType]) {
+    self.id = title
+    self.title = title
+    self.components = components
+  }
+}
+
+struct ItemCraftingSection: Identifiable {
+    let id: String // Changed from UUID
     let title: String
-    let components: [ComponentType]
+    let items: [ItemType]
+
+    // Add a custom initializer to set the ID from the title
+    init(title: String, items: [ItemType]) {
+        self.id = title
+        self.title = title
+        self.items = items
+    }
 }
 
 // A struct to manage a single piece of "juicy" feedback
@@ -24,6 +43,7 @@ struct CraftingFeedback: Identifiable, Equatable {
     var icon: String?
     var count: Int = 1
     var isXP: Bool = false
+    var isVisible: Bool = true
 }
 
 struct CraftingFeedbackView: View {
@@ -47,10 +67,9 @@ struct CraftingFeedbackView: View {
         .background(.ultraThinMaterial)
         .clipShape(Capsule())
         .shadow(radius: 5)
-        .transition(.asymmetric(
-            insertion: .opacity.combined(with: .move(edge: .bottom)),
-            removal: .opacity.combined(with: .move(edge: .top))
-        ))
+        // Give each pop-up a consistent height.
+       .frame(height: 30) // Adjust if your font size needs more space
+       .transition(.opacity.combined(with: .move(edge: .top)))
     }
 }
 

@@ -66,55 +66,17 @@ struct WoodworkingShopActionsView: View {
         NavigationView {
             VStack {
                 Toggle("Show Only Craftable", isOn: $showOnlyCraftable).padding(.horizontal)
+                
+                // The ZStack provides a canvas for the List and its overlay.
                 ZStack {
-                    List {
-                        // --- Render Component Sections ---
-                        ForEach(organizedComponents) { section in
-                            Section(header: Text(section.title)) {
-                                ForEach(section.components) { component in
-                                    ComponentRecipeRow(
-                                        gameManager: gameManager,
-                                        component: component,
-                                        requiredSkill: .carpentry,
-                                        onCraft: { craftedComponent in
-                                            showCraftingFeedback(forComponent: craftedComponent)
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                        
-                        // --- Render Item Sections ---
-                        ForEach(organizedItems) { section in
-                            Section(header: Text(section.title)) {
-                                ForEach(section.items) { item in
-                                    ItemRecipeRow(
-                                        gameManager: gameManager,
-                                        item: item,
-                                        onCraft: { craftedItem in
-                                            showCraftingFeedback(forItem: craftedItem)
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    .listStyle(.insetGrouped)
-                    .scrollContentBackground(.hidden)
-                    // --- THE FLOATING POP-UP OVERLAY ---
-                    VStack(spacing: 4) {
-                        ForEach(feedbackItems) { feedback in
-                            CraftingFeedbackView(feedback: feedback)
-                        }
-                    }
-                    // This makes the pop-up feel more centered and less tied to a specific button
-                    .offset(y: -UIScreen.main.bounds.height / 4)
+                    // The List is now its own clean component.
+                    craftingList
+                    
+                    // The overlay for pop-ups is now cleanly separated.
+                    feedbackOverlay
                 }
             }
-            .background(
-                Image("woodshop_background").resizable().scaledToFill() // <-- Use a unique background
-                    .edgesIgnoringSafeArea(.all).overlay(Color.black.opacity(0.4))
-            )
+            .background(craftingBackground) // The background is its own component.
             .navigationTitle("Woodworking Shop")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -123,24 +85,75 @@ struct WoodworkingShopActionsView: View {
         }
         .navigationViewStyle(.stack)
     }
+
+    // --- NEW: Computed Properties to break up the body ---
+
+    @ViewBuilder
+    private var craftingList: some View {
+        List {
+            // --- Render Component Sections ---
+            ForEach(organizedComponents) { section in
+                Section(header: Text(section.title)) {
+                    ForEach(section.components) { component in
+                        ComponentRecipeRow(
+                            gameManager: gameManager,
+                            component: component,
+                            requiredSkill: .carpentry,
+                            onCraft: { craftedComponent in
+                                showCraftingFeedback(forComponent: craftedComponent)
+                            }
+                        )
+                    }
+                }
+            }
+            
+            // --- Render Item Sections ---
+            ForEach(organizedItems) { section in
+                Section(header: Text(section.title)) {
+                    ForEach(section.items) { item in
+                        ItemRecipeRow(
+                            gameManager: gameManager,
+                            item: item,
+                            onCraft: { craftedItem in
+                                showCraftingFeedback(forItem: craftedItem)
+                            }
+                        )
+                    }
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+    }
+
+    @ViewBuilder
+    private var feedbackOverlay: some View {
+        VStack(spacing: 4) {
+            // --- Filter the array to only show visible items ---
+            ForEach(feedbackItems.filter { $0.isVisible }) { feedback in
+                CraftingFeedbackView(feedback: feedback)
+            }
+        }
+        .frame(width: 250, height: 120, alignment: .bottom) // alignment: .bottom makes new items appear from the bottom up
+        .offset(y: -UIScreen.main.bounds.height / 5)
+        .allowsHitTesting(false)
+    }
+
+    @ViewBuilder
+    private var craftingBackground: some View {
+        // The background is also isolated.
+        Image("woodshop_background").resizable().scaledToFill()
+            .edgesIgnoringSafeArea(.all).overlay(Color.black.opacity(0.4))
+    }
+
     
     // --- THE FEEDBACK LOGIC NOW LIVES HERE ---
     private func showCraftingFeedback(forItem item: ItemType) {
-        handleFeedback(
-            name: item.displayName, // <-- Pass the name
-            icon: item.iconAssetName,
-            yield: item.craftYield,
-            xp: item.recipe?.skillXP
-        )
+        handleFeedback(name: item.displayName, icon: item.iconAssetName, yield: item.craftYield, xp: item.recipe?.skillXP)
     }
-    
+
     private func showCraftingFeedback(forComponent component: ComponentType) {
-        handleFeedback(
-            name: component.displayName, // <-- Pass the name
-            icon: component.iconAssetName,
-            yield: component.craftYield,
-            xp: component.recipe?.skillXP
-        )
+        handleFeedback(name: component.displayName, icon: component.iconAssetName, yield: component.craftYield, xp: component.recipe?.skillXP)
     }
     
     // One generic function to handle all feedback
@@ -151,6 +164,7 @@ struct WoodworkingShopActionsView: View {
         // The text for item feedback is now empty, as the count and icon are separate.
         if let existingIndex = feedbackItems.firstIndex(where: { $0.icon == icon }) {
             feedbackItems[existingIndex].count += yield
+            feedbackItems[existingIndex].isVisible = true
         } else {
             // Create the feedback with an empty text string.
             feedbackItems.append(CraftingFeedback(text: "", icon: icon, count: yield))
@@ -176,19 +190,23 @@ struct WoodworkingShopActionsView: View {
         let logMessageText = "Crafted \(yield)x \(name)!"
         gameManager.logMessage(logMessageText, type: .success)
         
-        feedbackTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { _ in
-            withAnimation(.easeOut(duration: 0.3)) {
-                feedbackItems.removeAll()
+        // --- NEW Dismissal Logic ---
+        let itemsToDismiss = feedbackItems // Make a copy of the current items
+        feedbackTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: false) { _ in
+            for item in itemsToDismiss {
+                // Find the corresponding item in the main array and set its visibility to false
+                if let index = feedbackItems.firstIndex(where: { $0.id == item.id }) {
+                    withAnimation(.easeOut(duration: 0.5)) {
+                        feedbackItems[index].isVisible = false
+                    }
+                }
+            }
+            // Clean up the array after the animation
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                feedbackItems.removeAll { !$0.isVisible }
             }
         }
     }
-}
-
-// A helper struct for organizing items, similar to CraftingSection
-struct ItemCraftingSection: Identifiable {
-    let id = UUID()
-    let title: String
-    let items: [ItemType]
 }
 
 // Preview for WoodworkingShopActionsView
