@@ -6,6 +6,9 @@ struct ApothecaryActionsView: View {
     @Environment(\.dismiss) var dismiss
     
     @State private var showOnlyCraftable = false
+    @State private var feedbackItems: [CraftingFeedback] = []
+    @State private var feedbackTimer: Timer? = nil
+    
     @State private var lastCraftedComponent: ComponentType? = nil
     @State private var lastCraftedItem: ItemType? = nil
 

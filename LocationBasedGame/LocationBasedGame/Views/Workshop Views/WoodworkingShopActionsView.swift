@@ -18,7 +18,6 @@ struct WoodworkingShopActionsView: View {
     //    @State private var lastCraftedItem: ItemType? = nil
     
     @State private var feedbackItems: [CraftingFeedback] = []
-    //    @State private var feedbackAnchor: Anchor<CGPoint>? = nil
     @State private var feedbackTimer: Timer? = nil
     
     // MARK: - Data Preparation
