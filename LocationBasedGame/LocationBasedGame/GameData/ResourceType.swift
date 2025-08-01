@@ -58,11 +58,15 @@ enum ToolCategory: String, CaseIterable, Identifiable { // Added String, CaseIte
         case T9_stone, T9_tracks, T9_hide, T9_wood, T9_herb
         case T10_stone, T10_tracks, T10_hide, T10_wood, T10_herb
         case T11_stone, T11_tracks, T11_hide, T11_wood, T11_herb
+    // Garden Seeds ---
+        case T1_herb_seed, T2_herb_seed, T3_herb_seed, T4_herb_seed,
+             T5_herb_seed, T6_herb_seed, T7_herb_seed, T8_herb_seed,
+             T9_herb_seed, T10_herb_seed, T11_herb_seed
         
         
     var category: ResourceCategory {
         switch self {
-        case .T1_herb, .T2_herb, .T3_herb, .T4_herb, .T5_herb, .T6_herb, .T7_herb, .T8_herb, .T9_herb, .T10_herb, .T11_herb:
+        case .T1_herb, .T2_herb, .T3_herb, .T4_herb, .T5_herb, .T6_herb, .T7_herb, .T8_herb, .T9_herb, .T10_herb, .T11_herb, .T1_herb_seed, .T2_herb_seed, .T3_herb_seed, .T4_herb_seed, .T5_herb_seed, .T6_herb_seed, .T7_herb_seed, .T8_herb_seed, .T9_herb_seed, .T10_herb_seed, .T11_herb_seed:
             return .herb
         case .T0_wood, .T1_wood, .T2_wood, .T3_wood, .T4_wood, .T5_wood, .T6_wood, .T7_wood, .T8_wood, .T9_wood, .T10_wood, .T11_wood:
             return .wood
@@ -151,6 +155,18 @@ enum ToolCategory: String, CaseIterable, Identifiable { // Added String, CaseIte
         case .T10_herb: return "Starbloom Lily"
         case .T11_herb: return "Dragonvine Spore"
             
+        case .T1_herb_seed: return "Common Basil Seeds"
+        case .T2_herb_seed: return "Dandelion Seeds"
+        case .T3_herb_seed: return "Lavendar Flower Seeds"
+        case .T4_herb_seed: return "Rosehip Flower Seeds"
+        case .T5_herb_seed: return "Watermelon Seeds"
+        case .T6_herb_seed: return "Sunpetal Flower Seeds"
+        case .T7_herb_seed: return "Frostcap Mushroom Seeds"
+        case .T8_herb_seed: return "Bloodthorn Berry Seeds"
+        case .T9_herb_seed: return "Shadow Lily Seeds"
+        case .T10_herb_seed: return "Starbloom Lily Seeds"
+        case .T11_herb_seed: return "Dragonvine Seeds"
+            
         case .T1_gemstone: return "Uncut Sapphire Gemstone"
         case .T2_gemstone: return "Uncut Emerald Gemstone"
         case .T3_gemstone: return "Uncut Ruby Gemstone"
@@ -180,6 +196,19 @@ enum ToolCategory: String, CaseIterable, Identifiable { // Added String, CaseIte
         case .T9_herb: return "Shadow Lily"
         case .T10_herb: return "Starbloom Lily"
         case .T11_herb: return "Dragonvine Spore"
+            
+    // Seeds / Gardening
+        case .T1_herb_seed: return "Seeds for a Common Basil plant. Can be planted in a Garden plot."
+        case .T2_herb_seed: return "Seeds for a Dandelion plant. Can be planted in a Garden plot."
+        case .T3_herb_seed: return "Seeds for a Lavendar plant. Can be planted in a Garden plot."
+        case .T4_herb_seed: return "Seeds for a Rosehip plant. Can be planted in a Garden plot."
+        case .T5_herb_seed: return "Seeds for a Watermelon plant. Can be planted in a Garden plot."
+        case .T6_herb_seed: return "Seeds for a Sunpetal Flower plant. Can be planted in a Garden plot."
+        case .T7_herb_seed: return "Seeds for a Frostcap Mushroom plant. Can be planted in a Garden plot."
+        case .T8_herb_seed: return "Seeds for a Bloodthorn Berry plant. Can be planted in a Garden plot."
+        case .T9_herb_seed: return "Seeds for a Shadow Lily plant. Can be planted in a Garden plot."
+        case .T10_herb_seed: return "Seeds for a Starbloom Lily plant. Can be planted in a Garden plot."
+        case .T11_herb_seed: return "Seeds for a Dragonvine Spore plant. Can be planted in a Garden plot."
         
     // Woodcutting
         case .T0_wood: return "Wood Logs"
@@ -325,6 +354,20 @@ enum ToolCategory: String, CaseIterable, Identifiable { // Added String, CaseIte
         case .T9_herb: return "T9_plant"
         case .T10_herb: return "T10_plant"
         case .T11_herb: return "T11_plant"
+            
+    // Seeds / Gardening
+        case .T1_herb_seed: return "t1_herb_seed_icon"
+        case .T2_herb_seed: return "t2_herb_seed_icon"
+        case .T3_herb_seed: return "t3_herb_seed_icon"
+        case .T4_herb_seed: return "t4_herb_seed_icon"
+        case .T5_herb_seed: return "t5_herb_seed_icon"
+        case .T6_herb_seed: return "t6_herb_seed_icon"
+        case .T7_herb_seed: return "t7_herb_seed_icon"
+        case .T8_herb_seed: return "t8_herb_seed_icon"
+        case .T9_herb_seed: return "t9_herb_seed_icon"
+        case .T10_herb_seed: return "t10_herb_seed_icon"
+        case .T11_herb_seed: return "t11_herb_seed_icon"
+       
     // Jewelcrafting
         case .T1_gemstone: return "sapphireUncut"
         case .T2_gemstone: return "emeraldUncut"
@@ -410,6 +453,19 @@ enum ToolCategory: String, CaseIterable, Identifiable { // Added String, CaseIte
         case .T9_herb: return "T9_plantInv"
         case .T10_herb: return "T10_plantInv"
         case .T11_herb: return "T11_plantInv"
+            
+        case .T1_herb_seed: return "t1_herb_seed_icon"
+        case .T2_herb_seed: return "t2_herb_seed_icon"
+        case .T3_herb_seed: return "t3_herb_seed_icon"
+        case .T4_herb_seed: return "t4_herb_seed_icon"
+        case .T5_herb_seed: return "t5_herb_seed_icon"
+        case .T6_herb_seed: return "t6_herb_seed_icon"
+        case .T7_herb_seed: return "t7_herb_seed_icon"
+        case .T8_herb_seed: return "t8_herb_seed_icon"
+        case .T9_herb_seed: return "t9_herb_seed_icon"
+        case .T10_herb_seed: return "t10_herb_seed_icon"
+        case .T11_herb_seed: return "t11_herb_seed_icon"
+            
     // Jewelcrafting
         case .T1_gemstone: return "sapphireUncut"
         case .T2_gemstone: return "emeraldUncut"
@@ -448,6 +504,30 @@ enum ToolCategory: String, CaseIterable, Identifiable { // Added String, CaseIte
         case .T11_stone, .T11_tracks, .T11_hide, .T11_wood, .T11_herb: return .red
         case .T1_gemstone, .T2_gemstone, .T3_gemstone, .T4_gemstone, .T5_gemstone, .T6_gemstone:
             return .white
+        case .T1_herb_seed, .T2_herb_seed, .T3_herb_seed, .T4_herb_seed, .T5_herb_seed,
+            .T6_herb_seed, .T7_herb_seed, .T8_herb_seed, .T9_herb_seed, .T10_herb_seed, .T11_herb_seed:
+            return .green
+        
+        }
+    }
+        
+    var gardenIconAssetName: String? {
+        switch self {
+        // We only need to return a name for the HERB types.
+        case .T1_herb: return "garden_plot_t1_herb"
+        case .T2_herb: return "garden_plot_t2_herb"
+        case .T3_herb: return "garden_plot_t3_herb"
+        case .T4_herb: return "garden_plot_t4_herb"
+        case .T5_herb: return "garden_plot_t5_herb"
+        case .T6_herb: return "garden_plot_t6_herb"
+        case .T7_herb: return "garden_plot_t7_herb"
+        case .T8_herb: return "garden_plot_t8_herb"
+        case .T9_herb: return "garden_plot_t9_herb"
+        case .T10_herb: return "garden_plot_t10_herb"
+        case .T11_herb: return "garden_plot_t11_herb"
+            
+        // For all other resource types, return nil as they can't be grown in the garden.
+        default: return nil
         }
     }
         
@@ -679,31 +759,96 @@ enum ToolCategory: String, CaseIterable, Identifiable { // Added String, CaseIte
         switch self {
         case .T0_wood, .stone:
             return 0
-        case .T1_herb, .T1_wood, .T1_stone, .T1_tracks, .T1_hide:
+        case .T1_herb, .T1_herb_seed, .T1_wood, .T1_stone, .T1_tracks, .T1_hide:
             return 1
-        case .T2_herb, .T2_wood, .T2_stone, .T2_tracks, .T2_hide:
+        case .T2_herb, .T2_herb_seed, .T2_wood, .T2_stone, .T2_tracks, .T2_hide:
             return 2
-        case .T3_stone, .T3_tracks, .T3_hide, .T3_wood, .T3_herb:
+        case .T3_stone, .T3_herb_seed, .T3_tracks, .T3_hide, .T3_wood, .T3_herb:
             return 3
-        case .silverOre, .T4_stone, .T4_tracks, .T4_hide, .T4_wood, .T4_herb:
+        case .silverOre, .T4_herb_seed, .T4_stone, .T4_tracks, .T4_hide, .T4_wood, .T4_herb:
             return 4
-        case .T5_stone, .T5_tracks, .T5_hide, .T5_wood, .T5_herb:
+        case .T5_stone, .T5_herb_seed, .T5_tracks, .T5_hide, .T5_wood, .T5_herb:
             return 5
-        case .T6_stone, .T6_tracks, .T6_hide, .T6_wood, .T6_herb:
+        case .T6_stone, .T6_herb_seed, .T6_tracks, .T6_hide, .T6_wood, .T6_herb:
             return 6
-        case .goldOre, .T7_stone, .T7_tracks, .T7_hide, .T7_wood, .T7_herb:
+        case .goldOre, .T7_herb_seed, .T7_stone, .T7_tracks, .T7_hide, .T7_wood, .T7_herb:
             return 7
-        case .T8_stone, .T8_tracks, .T8_hide, .T8_wood, .T8_herb:
+        case .T8_stone, .T8_herb_seed, .T8_tracks, .T8_hide, .T8_wood, .T8_herb:
             return 8
-        case .platinumOre, .T9_stone, .T9_tracks, .T9_hide, .T9_wood, .T9_herb:
+        case .platinumOre, .T9_herb_seed, .T9_stone, .T9_tracks, .T9_hide, .T9_wood, .T9_herb:
             return 9
-        case .T10_stone, .T10_tracks, .T10_hide, .T10_wood, .T10_herb:
+        case .T10_stone, .T10_herb_seed, .T10_tracks, .T10_hide, .T10_wood, .T10_herb:
             return 10
-        case .T11_stone, .T11_tracks, .T11_hide, .T11_wood, .T11_herb:
+        case .T11_stone, .T11_herb_seed, .T11_tracks, .T11_hide, .T11_wood, .T11_herb:
             return 11
         // Rare drops
         case .ravenEgg, .owlEgg, .hawkEgg, .dragonEgg, .feathers, .T1_gemstone, .T2_gemstone, .T3_gemstone, .T4_gemstone, .T5_gemstone, .T6_gemstone:
             return -1
+        }
+    }
+        
+/// Returns the seed that corresponds to this herb resource.
+    var correspondingSeed: ResourceType? {
+        switch self {
+        case .T1_herb: return .T1_herb_seed
+        case .T2_herb: return .T2_herb_seed
+        case .T3_herb: return .T3_herb_seed
+        case .T4_herb: return .T4_herb_seed
+        case .T5_herb: return .T5_herb_seed
+        case .T6_herb: return .T6_herb_seed
+        case .T7_herb: return .T7_herb_seed
+        case .T8_herb: return .T8_herb_seed
+        case .T9_herb: return .T9_herb_seed
+        case .T10_herb: return .T10_herb_seed
+        case .T11_herb: return .T11_herb_seed
+        // If 'self' is not a harvestable herb, it has no corresponding seed.
+        default: return nil
+        }
+    }
+        
+    var correspondingHerb: ResourceType? {
+        switch self {
+        case .T1_herb_seed: return .T1_herb
+        case .T2_herb_seed: return .T2_herb
+        case .T3_herb_seed: return .T3_herb
+        case .T4_herb_seed: return .T4_herb
+        case .T5_herb_seed: return .T5_herb
+        case .T6_herb_seed: return .T6_herb
+        case .T7_herb_seed: return .T7_herb
+        case .T8_herb_seed: return .T8_herb
+        case .T9_herb_seed: return .T9_herb
+        case .T10_herb_seed: return .T10_herb
+        case .T11_herb_seed: return .T11_herb
+        default: return nil
+        }
+    }
+    
+    // --- NEW: Growth time for each seed ---
+    var growthTime: TimeInterval? { // in seconds
+        switch self {
+        case .T1_herb_seed: return 60 * 60 * 4     // 4 hours
+        case .T2_herb_seed: return 60 * 60 * 5     // 5 hours
+        case .T3_herb_seed: return 60 * 60 * 6     // 6 hours
+        case .T4_herb_seed: return 60 * 60 * 8     // 8 hours
+        case .T5_herb_seed: return 60 * 60 * 10     // 10 hours
+        case .T6_herb_seed: return 60 * 60 * 12     // 12 hours
+        case .T7_herb_seed: return 60 * 60 * 14     // 14 hours
+        case .T8_herb_seed: return 60 * 60 * 16     // 16 hours
+        case .T9_herb_seed: return 60 * 60 * 18     // 18 hours
+        case .T10_herb_seed: return 60 * 60 * 20     // 20 hours
+        case .T11_herb_seed: return 60 * 60 * 24   // 24 hours
+        default: return nil
+        }
+    }
+    
+    // --- NEW: Yield for a successful harvest ---
+    var harvestYield: Int? {
+        switch self {
+        case .T1_herb_seed: return Int.random(in: 10...15)
+        case .T2_herb_seed: return Int.random(in: 12...18)
+        // ... define slightly increasing yields for each tier ...
+        case .T11_herb_seed: return Int.random(in: 25...35)
+        default: return nil
         }
     }
 }

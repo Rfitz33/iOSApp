@@ -33,17 +33,29 @@
 		A21312A72DF0A5B500159D5D /* Exceptions for "LocationBasedGame" folder in "LocationBasedGame" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"GameManager/GameManager+Garden.swift",
 				Info.plist,
 			);
 			target = A23C8AD32DEA591500410C9E /* LocationBasedGame */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		A21CF3832E3C1028008696B6 /* Exceptions for "LocationBasedGame" folder in "Copy Bundle Resources" phase from "LocationBasedGame" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = A23C8AD22DEA591500410C9E /* Resources */;
+			membershipExceptions = (
+				"GameManager/GameManager+Garden.swift",
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A23C8AD62DEA591500410C9E /* LocationBasedGame */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				A21312A72DF0A5B500159D5D /* Exceptions for "LocationBasedGame" folder in "LocationBasedGame" target */,
+				A21CF3832E3C1028008696B6 /* Exceptions for "LocationBasedGame" folder in "Copy Bundle Resources" phase from "LocationBasedGame" target */,
 			);
 			path = LocationBasedGame;
 			sourceTree = "<group>";

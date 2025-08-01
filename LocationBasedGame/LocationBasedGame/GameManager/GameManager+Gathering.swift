@@ -531,7 +531,7 @@ extension GameManager {
             if let gem = gemToFind, Double.random(in: 0...1) < (gemChance + totalRareFindBonus) {
                 let message = "You found a rare \(gem.displayName)!"
                 playerInventory[gem, default: 0] += 1
-                logMessage(message, type: .rare)
+                self.logMessage(message, type: .rare)
                 
                 // Check for quest progress and suppress the pop-up if progress was made.
                 if !updateActivePetQuestProgress(objectiveKey: "rare_finds") {
@@ -546,7 +546,7 @@ extension GameManager {
             if Double.random(in: 0...1) < (0.015 + totalRareFindBonus) {
                 let message = "You found a Whetstone while mining!"
                 sanctumItemStorage[.whetstone, default: 0] += 1
-                logMessage(message, type: .rare)
+                self.logMessage(message, type: .rare)
                 
                 // Check for quest progress and suppress the pop-up
                 if !updateActivePetQuestProgress(objectiveKey: "rare_finds") {
@@ -562,7 +562,7 @@ extension GameManager {
                 let amount = Int.random(in: 5...15)
                 let message = "You found \(amount) Feathers while foraging!"
                 playerInventory[.feathers, default: 0] += amount
-                logMessage(message, type: .rare)
+                self.logMessage(message, type: .rare)
 
                 // Check for quest progress and suppress the pop-up
                 if !updateActivePetQuestProgress(objectiveKey: "rare_finds", amount: amount) { // Pass amount for multi-progress
@@ -570,6 +570,21 @@ extension GameManager {
                 }
             }
         }
+        
+        // --- Seed Drop Logic ---
+            // Let's say a 10% chance to find seeds
+            if Double.random(in: 0...1) < (0.10 + totalRareFindBonus) {
+                // Find the corresponding seed for the herb that was just gathered
+                if let seedToFind = gatheredResourceType.correspondingSeed {
+                    let amount = Int.random(in: 1...3)
+                    playerInventory[seedToFind, default: 0] += amount
+                    
+                    // Send a pop-up and log the message
+                    let message = "You found \(amount)x \(seedToFind.displayName)!"
+                    self.feedbackPublisher.send(FeedbackEvent(message: message, isPositive: true))
+                    self.logMessage(message, type: .rare)
+                }
+            }
         
         // --- Egg Drops from Woodcutting ---
         if gatheredResourceType.category == .wood && woodcuttingLevel >= 15 && huntingLevel >= 15 {
@@ -642,7 +657,7 @@ extension GameManager {
                         // 1. Add to inventory FIRST.
                         playerInventory[eggToAward, default: 0] += 1
                         // 2. Log the message SECOND. This updates the bottom bar.
-                        logMessage(message, type: .rare)
+                        self.logMessage(message, type: .rare)
                         // 3. Set the pop-up message LAST. This updates the top of the screen.
                         lastPotionStatusMessage = message
                         print("SUCCESS! Player found a \(eggToAward.displayName)!")
@@ -650,44 +665,6 @@ extension GameManager {
                 } else {
                     print("Roll failed. No egg this time.")
                 }
-            
-//            // --- STEP 1: Determine the pool of ALL eligible eggs based on player skills ---
-//            var eligibleEggPool: [ResourceType] = []
-//        
-//            if woodcuttingLevel >= 30 && huntingLevel >= 30 {
-//                eligibleEggPool.append(.hawkEgg)
-//            }
-//            if woodcuttingLevel >= 25 && huntingLevel >= 25 {
-//                eligibleEggPool.append(.owlEgg)
-//            }
-//            if woodcuttingLevel >= 15 && huntingLevel >= 15 { // Adjusted base level
-//                eligibleEggPool.append(.ravenEgg)
-//            }
-//            
-//            // --- STEP 2: Filter out any eggs the player already has in any form ---
-//            let eggsPlayerDoesNotHave = eligibleEggPool.filter { eggType in
-//                // The player does NOT have this egg if all three of these conditions are true:
-//                let isNotUnlocked = !unlockedPetTypes.contains(where: { $0.eggResourceType == eggType })
-//                let isNotInInventory = (playerInventory[eggType] ?? 0) == 0
-//                let isNotIncubating = !incubatingSlots.contains(where: { $0.eggType == eggType })
-//                
-//                return isNotUnlocked && isNotInInventory && isNotIncubating
-//            }
-//            
-//            // --- STEP 3: If there's a potential egg to find, roll the dice ---
-//            if !eggsPlayerDoesNotHave.isEmpty {
-//                // Roll the 2% chance to see if an egg drops at all.
-//                if Double.random(in: 0...1) < (0.02 + totalRareFindBonus) {
-//                    
-//                    // Success! Now pick one of the available eggs to award.
-//                    // We can add weighting here later if desired, but for now, we'll pick one randomly.
-//                    if let eggToAward = eggsPlayerDoesNotHave.randomElement() {
-//                        playerInventory[eggToAward, default: 0] += 1
-//                        lastPotionStatusMessage = "Incredibly, you found a \(eggToAward.displayName)!"
-//                        print("RARE DROP: Found \(eggToAward.displayName)! It was in the available pool.")
-//                    }
-//                }
-//            }
         }
     }
     
@@ -782,5 +759,63 @@ extension GameManager {
             
             return (false, invalidMessage)
         }
+    }
+    
+    func plantSeed(_ seedType: ResourceType, inPlotID plotID: UUID) -> (success: Bool, message: String) {
+        // 1. Find the plot
+        guard let plotIndex = gardenPlots.firstIndex(where: { $0.id == plotID }) else {
+            return (false, "Could not find the garden plot.")
+        }
+        
+        // 2. Make sure it's empty
+        guard gardenPlots[plotIndex].isEmpty else {
+            return (false, "This plot is already in use.")
+        }
+        
+        // 3. Check if the player has the seed
+        guard (playerInventory[seedType] ?? 0) > 0 else {
+            return (false, "You don't have any \(seedType.displayName).")
+        }
+        
+        // 4. Consume the seed and plant it
+        playerInventory[seedType, default: 0] -= 1
+        gardenPlots[plotIndex].plantedSeed = seedType
+        gardenPlots[plotIndex].plantTime = Date()
+        
+        return (true, "Planted \(seedType.displayName)!")
+    }
+    
+    func harvestPlot(plotID: UUID) -> (success: Bool, message: String) {
+        guard let plotIndex = gardenPlots.firstIndex(where: { $0.id == plotID }) else {
+            return (false, "Could not find the garden plot.")
+        }
+        
+        guard let plantedSeed = gardenPlots[plotIndex].plantedSeed,
+              let plantTime = gardenPlots[plotIndex].plantTime,
+              let growthTime = plantedSeed.growthTime,
+              let herbToYield = plantedSeed.correspondingHerb,
+              let yieldAmount = plantedSeed.harvestYield else {
+            return (false, "There is nothing ready to harvest in this plot.")
+        }
+
+        // Check if enough time has passed
+        guard Date().timeIntervalSince(plantTime) >= growthTime else {
+            return (false, "This plant is not yet fully grown.")
+        }
+        
+        // Check for inventory space
+        guard (maxHerbCapacity - currentHerbLoad) >= yieldAmount else {
+            return (false, "Your herb satchel is too full to harvest this.")
+        }
+        
+        // Harvest the plant!
+        playerInventory[herbToYield, default: 0] += yieldAmount
+        addXP(Int(Double(herbToYield.baseXPYield) * 0.5 * Double(yieldAmount)), to: .foraging) // Grant foraging XP
+        
+        // Reset the plot
+        gardenPlots[plotIndex].plantedSeed = nil
+        gardenPlots[plotIndex].plantTime = nil
+        
+        return (true, "Harvested \(yieldAmount)x \(herbToYield.displayName)!")
     }
 }

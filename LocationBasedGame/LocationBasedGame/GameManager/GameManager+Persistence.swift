@@ -369,4 +369,53 @@ extension GameManager {
             }
         }
     }
+    
+    func saveGardenState() {
+        do {
+            let encoder = JSONEncoder()
+            let encodedData = try encoder.encode(gardenPlots)
+            UserDefaults.standard.set(encodedData, forKey: gardenStateKey)
+        } catch {
+            print("Failed to save Garden state: \(error)")
+        }
+    }
+
+    func loadGardenState() {
+        if let savedData = UserDefaults.standard.data(forKey: gardenStateKey) {
+            do {
+                let decoder = JSONDecoder()
+                self.gardenPlots = try decoder.decode([GardenPlot].self, from: savedData)
+                print("Garden state loaded with \(gardenPlots.count) plots.")
+            } catch {
+                print("Failed to load Garden state: \(error). Resetting to default.")
+                // If loading fails, create the default plots.
+                initializeDefaultGardenPlots()
+            }
+        } else {
+            // If no saved data exists, this is the first time. Create the plots.
+            print("No Garden state found in storage. Initializing default plots.")
+            initializeDefaultGardenPlots()
+        }
+        
+        // This ensures that if you change 'maxGardenPlots' in the future,
+        // the player's save file will correctly update with the new plots.
+        if gardenPlots.count < maxGardenPlots {
+            let plotsToAdd = maxGardenPlots - gardenPlots.count
+            for _ in 0..<plotsToAdd {
+                gardenPlots.append(GardenPlot())
+            }
+            print("Added \(plotsToAdd) new garden plots to match updated game settings.")
+        }
+    }
+
+    // --- Helper Function for Initialization ---
+    // It's good practice to have a dedicated function for creating the initial state.
+    private func initializeDefaultGardenPlots() {
+        // Clear any old data first.
+        self.gardenPlots = []
+        // Create the number of plots defined in GameManager.
+        for _ in 0..<maxGardenPlots {
+            gardenPlots.append(GardenPlot())
+        }
+    }
 }

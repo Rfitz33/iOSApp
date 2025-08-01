@@ -67,21 +67,24 @@ class GameManager: ObservableObject {
     // Equipment & Bonuses
     var activeStatBonuses: [PlayerStat: Double] = [:]
     
-    // --- NEW: Aviary & Pet Properties ---
+    // --- Aviary & Pet Properties ---
     @Published var ownedCreatures: [Creature] = [] { didSet { saveCreaturesState() } }
     @Published var incubatingSlots: [IncubationSlot] = [] { didSet { saveIncubationState() } }
     @Published var activeCreatureID: UUID? = nil { didSet { saveCreaturesState();
         recalculateAllBonuses() } }
     @Published var unlockedPetTypes: Set<CreatureType> = [] { didSet { saveUnlockedPetTypes() } }
-    // --- NEW: A dictionary to store time reductions for pet growth ---
+    // --- Dictionary to store time reductions for pet growth ---
     // We will save this along with the creature data.
     @Published var petGrowthReductions: [UUID: TimeInterval] = [:] { didSet { saveCreaturesState() } }
     @Published var lastFeatherCollectionTime: Date? { didSet { savePassiveFeatherState() } }
     @Published var accumulatedFeathers: Int = 0 { didSet { savePassiveFeatherState() } }
-    // --- NEW: Watchtower Properties ---
+    // --- Watchtower Properties ---
     @Published var lastHorizonScanTime: Date? { didSet { saveWatchtowerState() } }
     // This will store the ID of the special node so we can track it.
     @Published var activeDiscoveryNodeID: UUID? { didSet { saveWatchtowerState() } }
+    // --- Garden Properties ---
+    // The array of plots the player has.
+    @Published var gardenPlots: [GardenPlot] = [] { didSet { saveGardenState() } }
     
     // MARK: State & Constants
     // Timers
@@ -112,6 +115,7 @@ class GameManager: ObservableObject {
     let baseXpPerLevel: Int = 100
     let watchtowerInfluenceRadius: Double = 500.0 // 500 meters
     let watchtowerScanCooldown: TimeInterval = 60 * 5 // * 60 * 23 // 23 hours
+    let maxGardenPlots: Int = 2 // Start with 2 plots
     
     // Storage Keys
     let homeBaseStorageKey = "gameManager_homeBase"
@@ -124,6 +128,7 @@ class GameManager: ObservableObject {
     let unlockedPetTypesKey = "gameManager_unlockedPetTypes_v1"
     let passiveFeatherStateKey = "gameManager_passiveFeatherState_v1"
     let watchtowerStateKey = "gameManager_watchtowerState_v1"
+    let gardenStateKey = "gameManager_gardenState_v1"
     
     // Store the currently equipped item for each slot
     @Published var equippedGear: [EquipmentSlot: ItemType] = [:] {
@@ -288,6 +293,7 @@ class GameManager: ObservableObject {
         loadActivePotionEffects()
         loadScoutState()
         loadWatchtowerState()
+        loadGardenState()
         loadCreaturesState()
         loadIncubationState()
         loadUnlockedPetTypes()
