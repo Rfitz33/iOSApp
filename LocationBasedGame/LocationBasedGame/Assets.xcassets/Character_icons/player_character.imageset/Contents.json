@@ -6,12 +6,12 @@
       "scale" : "1x"
     },
     {
-      "filename" : "player_character2.png",
+      "filename" : "player_character2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "player_character3 1.png",
+      "filename" : "player_character3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

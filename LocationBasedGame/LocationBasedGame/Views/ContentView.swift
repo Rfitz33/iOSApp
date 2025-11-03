@@ -24,7 +24,7 @@ struct ContentView: View {
         MainScreenRouterView(
             locationManager: locationManager,
             gameManager: gameManager,
-            mapCameraPosition: $mapCameraPosition,
+//            mapCameraPosition: $mapCameraPosition,
             cameraTrackingMode: $cameraTrackingMode,
             initialLocationSet: $initialLocationSet,
             initialSpawnDone: $initialSpawnDone,

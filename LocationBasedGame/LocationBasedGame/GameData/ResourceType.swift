@@ -914,7 +914,7 @@ enum ToolCategory: String, CaseIterable, Identifiable { // Added String, CaseIte
     
 // Convenience for CLLocationCoordinate2D to be Codable if we ever need to save nodes
 // (Not strictly needed if nodes are always dynamically spawned and not persisted)
-extension CLLocationCoordinate2D: Codable {
+extension CLLocationCoordinate2D: @retroactive Codable {
     public enum CodingKeys: String, CodingKey {
         case latitude
         case longitude

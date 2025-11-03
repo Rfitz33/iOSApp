@@ -47,7 +47,7 @@ struct TopHUDView: View {
                 }
                 
                 Button(action: onPlayerButtonTap) {
-                    Image("player_character")
+                    Image("player_image")
                         .resizable().scaledToFit().frame(width: 32, height: 32)
                 }
                 .buttonStyle(MapControlButton(isActive: cameraTrackingMode == .player))

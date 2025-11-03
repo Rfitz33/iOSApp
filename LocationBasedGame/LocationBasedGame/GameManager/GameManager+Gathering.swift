@@ -384,12 +384,14 @@ extension GameManager {
         // --- 2. Determine Yield ---
         var amountToGather = 0
         var xpToAward = resourceType.baseXPYield
+    print("DEBUG: Base XP = \(xpToAward)")
         
         if nodeToGather.isDiscovery {
             amountToGather = Int.random(in: 20...30)
             xpToAward = resourceType.baseXPYield * 5
             self.activeDiscoveryNodeID = nil
             messageParts.append("(Bountiful Discovery!)")
+    print("DEBUG: Discovery Node! Calculated yield = \(amountToGather), XP = \(xpToAward)")
         } else {
             let skillLevelBonus = min((playerSkillLevel - 1) / 3, 3)
             let yieldMultiplier = activePotionEffects[.increasedYield] != nil && Date() < activePotionEffects[.increasedYield]! ? 1.2 : 1.0
@@ -411,18 +413,20 @@ extension GameManager {
             amountToGather = Int(Double(Int.random(in: baseYieldRange)) * yieldMultiplier) + skillLevelBonus
             amountToGather = max(1, amountToGather)
             xpToAward += xpBonus
-        
+    print("DEBUG: Normal Node. Calculated yield = \(amountToGather), XP = \(xpToAward)")
             if nodeToGather.isEnriched {
                 amountToGather = Int(Double(amountToGather) * 1.5)
                 xpToAward = Int(Double(xpToAward) * 1.5)
                 messageParts.append("(Enriched!)")
+    print("DEBUG: Enriched Node! Final yield = \(amountToGather), XP = \(xpToAward)")
             }
         }
                 
         // --- 3. Check Capacity ---
         let capacityType = resourceType.category == .herb ? maxHerbCapacity - currentHerbLoad : maxGeneralResourceCapacity - currentGeneralResourceLoad
         let amountToAdd = min(amountToGather, capacityType)
-        
+    print("DEBUG: Capacity Check. Available Space = \(capacityType). Amount to add = \(amountToAdd)")
+
         if amountToAdd <= 0 {
             let fullMessage = "Inventory full for this resource type!"
             feedbackPublisher.send(FeedbackEvent(message: fullMessage, isPositive: false))
@@ -464,6 +468,7 @@ extension GameManager {
         // The 'toolToUse' variable is now correctly populated from Step 1.
         // The 'xpToAward' variable is correctly calculated in Step 2.
         // This logic will now work as intended.
+    print("DEBUG: Applying durability and awarding \(xpToAward) XP.")
         if let tool = toolToUse, !bypassDistanceAndToolChecks {
             consumeDurability(for: tool, resourceType: nodeToGather.type, playerSkillLevel: playerSkillLevel)
         }
@@ -490,7 +495,7 @@ extension GameManager {
                 }
             }
         }
-        
+    print("DEBUG: Checking for rare drops and pet abilities...")
         // After a successful gather where items are added to inventory:
         handleRareDrops(from: nodeToGather.type)
 
@@ -498,6 +503,7 @@ extension GameManager {
     }
     
     private func handleRareDrops(from gatheredResourceType: ResourceType) {
+    print("--- RARE DROP CHECK START for \(gatheredResourceType.displayName) ---")
         let miningLevel = getLevel(for: .mining)
         let woodcuttingLevel = getLevel(for: .woodcutting)
         let huntingLevel = getLevel(for: .hunting)
@@ -508,7 +514,6 @@ extension GameManager {
            activePet.type == .dragon,
            activePet.state == .trainedAdult {
             dragonRareFindBonus = 0.005 // +0.5%
-            print("DRAGON ABILITY: Hoard Instinct active, +0.5% rare find chance.")
         }
         // Get bonus from gear/jewelry
         let gearRareFindBonus = activeStatBonuses[.rareFindChanceBonus] ?? 0.0
@@ -519,8 +524,8 @@ extension GameManager {
         if gatheredResourceType.category == .stoneOre && miningLevel >= 15 {
             var gemToFind: ResourceType? = nil
             var gemChance: Double = 0.0
-            
             let resourceTier = gatheredResourceType.tier
+            
             if resourceTier >= 10 && miningLevel >= 45 { gemToFind = .T6_gemstone; gemChance = (resourceTier == 10 ? 0.01 : 0.02) }
             else if resourceTier >= 8 && miningLevel >= 39 { gemToFind = .T5_gemstone; gemChance = (resourceTier == 8 ? 0.01 : 0.02) }
             else if resourceTier >= 7 && miningLevel >= 33 { gemToFind = .T4_gemstone; gemChance = (resourceTier == 7 ? 0.01 : 0.02) }
@@ -534,10 +539,11 @@ extension GameManager {
                 self.logMessage(message, type: .rare)
                 
                 // Check for quest progress and suppress the pop-up if progress was made.
-                if !updateActivePetQuestProgress(objectiveKey: "rare_finds") {
-                    lastPotionStatusMessage = message // Use the potion/rare pop-up
+                if !self.updateActivePetQuestProgress(objectiveKey: "rare_finds") {
+                    // If no quest banner, show the standard rare drop pop-up.
+                    self.feedbackPublisher.send(FeedbackEvent(message: message, isPositive: true))
                 }
-                print("RARE DROP: Found \(gem.displayName)...")
+                print("RARE DROP: Found \(gem.displayName).")
             }
         }
         
@@ -549,8 +555,8 @@ extension GameManager {
                 self.logMessage(message, type: .rare)
                 
                 // Check for quest progress and suppress the pop-up
-                if !updateActivePetQuestProgress(objectiveKey: "rare_finds") {
-                    lastPotionStatusMessage = message
+                if !self.updateActivePetQuestProgress(objectiveKey: "rare_finds") {
+                    self.feedbackPublisher.send(FeedbackEvent(message: message, isPositive: true))
                 }
                 print("RARE DROP: Found Whetstone.")
             }
@@ -563,109 +569,78 @@ extension GameManager {
                 let message = "You found \(amount) Feathers while foraging!"
                 playerInventory[.feathers, default: 0] += amount
                 self.logMessage(message, type: .rare)
-
+                
                 // Check for quest progress and suppress the pop-up
-                if !updateActivePetQuestProgress(objectiveKey: "rare_finds", amount: amount) { // Pass amount for multi-progress
-                    lastPotionStatusMessage = message
+                if !self.updateActivePetQuestProgress(objectiveKey: "rare_finds", amount: amount) {
+                    self.feedbackPublisher.send(FeedbackEvent(message: message, isPositive: true))
                 }
             }
         }
         
         // --- Seed Drop Logic ---
-            // Let's say a 10% chance to find seeds
-            if Double.random(in: 0...1) < (0.10 + totalRareFindBonus) {
-                // Find the corresponding seed for the herb that was just gathered
-                if let seedToFind = gatheredResourceType.correspondingSeed {
-                    let amount = Int.random(in: 1...3)
-                    playerInventory[seedToFind, default: 0] += amount
-                    
-                    // Send a pop-up and log the message
-                    let message = "You found \(amount)x \(seedToFind.displayName)!"
-                    self.feedbackPublisher.send(FeedbackEvent(message: message, isPositive: true))
-                    self.logMessage(message, type: .rare)
-                }
+        // Let's say a 10% chance to find seeds
+        if Double.random(in: 0...1) < (0.10 + totalRareFindBonus) {
+            // Find the corresponding seed for the herb that was just gathered
+            if let seedToFind = gatheredResourceType.correspondingSeed {
+                let amount = Int.random(in: 1...3)
+                playerInventory[seedToFind, default: 0] += amount
+                
+                // Send a pop-up and log the message
+                let message = "You found \(amount)x \(seedToFind.displayName)!"
+                self.feedbackPublisher.send(FeedbackEvent(message: message, isPositive: true))
+                self.logMessage(message, type: .rare)
             }
+        }
         
         // --- Egg Drops from Woodcutting ---
         if gatheredResourceType.category == .wood && woodcuttingLevel >= 15 && huntingLevel >= 15 {
+            // 1. Define all possible bird eggs and their requirements.
+            let allBirdEggs: [(egg: ResourceType, wcLvl: Int, huntLvl: Int)] = [
+                (egg: .ravenEgg, wcLvl: 15, huntLvl: 15),
+                (egg: .owlEgg, wcLvl: 25, huntLvl: 25),
+                (egg: .hawkEgg, wcLvl: 30, huntLvl: 30)
+                // Dragon egg is handled separately in performHunt.
+            ]
             
-            print("--- Egg Drop Check Started (WC Lvl: \(woodcuttingLevel), Hunt Lvl: \(huntingLevel)) ---")
-
-                // 1. Define all possible bird eggs and their requirements.
-                let allBirdEggs: [(egg: ResourceType, wcLvl: Int, huntLvl: Int)] = [
-                    (egg: .ravenEgg, wcLvl: 15, huntLvl: 15),
-                    (egg: .owlEgg, wcLvl: 25, huntLvl: 25),
-                    (egg: .hawkEgg, wcLvl: 30, huntLvl: 30)
-                    // Dragon egg is handled separately in performHunt.
-                ]
-
-                // 2. Determine which eggs the player is high enough level to find.
-                let eligibleEggPool = allBirdEggs.filter { potentialEgg in
-                    woodcuttingLevel >= potentialEgg.wcLvl && huntingLevel >= potentialEgg.huntLvl
+            // 2. Determine which eggs the player is high enough level to find.
+            let eligibleEggPool = allBirdEggs.filter { potentialEgg in
+                woodcuttingLevel >= potentialEgg.wcLvl && huntingLevel >= potentialEgg.huntLvl
+            }
+            
+            // ---  Check for eligibility FIRST ---
+            if eligibleEggPool.isEmpty {
+                print("Player is not high enough level for any bird egg drops.")
+                return // Exit silently. No need to spam the player.
+            }
+            
+            let eggsPlayerCanStillFind = eligibleEggPool.filter { potentialEgg in
+                let egg = potentialEgg.egg
+                let isNotUnlocked = !unlockedPetTypes.contains { $0.eggResourceType == egg }
+                let isNotInInventory = (playerInventory[egg] ?? 0) == 0
+                let isNotIncubating = !incubatingSlots.contains { $0.eggType == egg }
+                let canBeFound = isNotUnlocked && isNotInInventory && isNotIncubating
+                return canBeFound
+            }
+            
+            if eggsPlayerCanStillFind.isEmpty { return }
+            
+            // 4. If there's an egg to find, roll the dice.
+            let dropChance = 0.02 // Set back to a reasonable value
+            
+            if Double.random(in: 0...1) < (dropChance + totalRareFindBonus) {
+                if let eggToAward = eggsPlayerCanStillFind.randomElement()?.egg {
+                    let message = "Incredibly, you found a \(eggToAward.displayName)!"
+                    playerInventory[eggToAward, default: 0] += 1
+                    
+                    // --- UNIFIED FEEDBACK ---
+                    self.feedbackPublisher.send(FeedbackEvent(message: message, isPositive: true))
+                    self.logMessage(message, type: .rare)
+                    
+                    print("RARE DROP: Found \(eggToAward.displayName) from woodcutting.")
                 }
-
-                // --- LOGIC FIX 1: Check for eligibility FIRST ---
-                if eligibleEggPool.isEmpty {
-                    print("Player is not high enough level for any bird egg drops.")
-                    return // Exit silently. No need to spam the player.
-                }
-                
-                print("Eligible Pool (based on skills): \(eligibleEggPool.map { $0.egg.displayName })")
-
-            print("--- Starting Detailed Ownership Filter ---")
-                let eggsPlayerCanStillFind = eligibleEggPool.filter { potentialEgg in
-                    let egg = potentialEgg.egg
-                    print("Checking ownership for: \(egg.displayName)...")
-                    
-                    let isNotUnlocked = !unlockedPetTypes.contains { $0.eggResourceType == egg }
-                    print("... Is Not Unlocked (hatched): \(isNotUnlocked)")
-                    
-                    let isNotInInventory = (playerInventory[egg] ?? 0) == 0
-                    print("... Is Not In Inventory: \(isNotInInventory)")
-                    
-                    let isNotIncubating = !incubatingSlots.contains { $0.eggType == egg }
-                    print("... Is Not Incubating: \(isNotIncubating)")
-                    
-                    let canBeFound = isNotUnlocked && isNotInInventory && isNotIncubating
-                    print("... Final decision for \(egg.displayName): Can be found = \(canBeFound)")
-                    
-                    return canBeFound
-                }
-
-                if eggsPlayerCanStillFind.isEmpty {
-                    print("DEBUG: Player has already found/unlocked all eligible eggs.")
-                    // Let's print the state of the collections to be 100% sure
-                    print("DEBUG: unlockedPetTypes = \(unlockedPetTypes.map { $0.displayName })")
-                    print("DEBUG: incubatingSlots = \(incubatingSlots.map { $0.eggType.displayName })")
-                    print("DEBUG: eggs in inventory = \(playerInventory.filter { $0.key.tags?.contains(.egg) == true })")
-                    return
-                }
-                
-                print("DEBUG: Final Pool (eggs player can still find): \(eggsPlayerCanStillFind.map { $0.egg.displayName })")
-
-                
-                // 4. If there's an egg to find, roll the dice.
-                let dropChance = 0.02 // Set back to a reasonable value
-                
-                print("Rolling for a drop with a \(Int(dropChance * 100))% chance...")
-                
-                if Double.random(in: 0...1) < (dropChance + totalRareFindBonus) {
-                    
-                    // 5. Success! Award a random egg from the final, filtered pool.
-                    if let eggToAward = eggsPlayerCanStillFind.randomElement()?.egg {
-                        let message = "Incredibly, you found a \(eggToAward.displayName)!"
-                        // 1. Add to inventory FIRST.
-                        playerInventory[eggToAward, default: 0] += 1
-                        // 2. Log the message SECOND. This updates the bottom bar.
-                        self.logMessage(message, type: .rare)
-                        // 3. Set the pop-up message LAST. This updates the top of the screen.
-                        lastPotionStatusMessage = message
-                        print("SUCCESS! Player found a \(eggToAward.displayName)!")
-                    }
-                } else {
-                    print("Roll failed. No egg this time.")
-                }
+            }
         }
+        print("--- RARE DROP CHECK END ---")
     }
     
     func petFetchResource(node: ResourceNode, playerLocation: CLLocation) -> (success: Bool, message: String) {

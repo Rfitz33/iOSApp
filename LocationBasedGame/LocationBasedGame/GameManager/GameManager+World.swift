@@ -452,6 +452,7 @@ extension GameManager {
     /// - Parameter objectiveKey: The specific objective to increment, e.g., "high_tier_hunts".
     /// - Parameter amount: The amount to add to the progress, usually 1.
     func updateActivePetQuestProgress(objectiveKey: String, amount: Int = 1) -> Bool {
+        print("--- QUEST PROGRESS CHECK START for key: \(objectiveKey) ---")
         // 1. Ensure there is an active pet.
         guard let activePetID = self.activeCreatureID,
               let petIndex = ownedCreatures.firstIndex(where: { $0.id == activePetID }) else {
@@ -494,7 +495,7 @@ extension GameManager {
 
         // 6. Check if the entire quest is complete.
         checkQuestCompletion(forPetAtIndex: petIndex)
-        
+        print("--- QUEST PROGRESS CHECK END ---")
         return true
     }
 
