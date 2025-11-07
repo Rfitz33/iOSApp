@@ -132,6 +132,9 @@ struct MainScreenRouterView: View {
                     onHomeButtonTap: { self.cameraTrackingMode = .homeBase }
                 )
                 Spacer()
+                    .contentShape(Rectangle()) // Defines the spacer's shape for gestures
+                    .allowsHitTesting(false)   // Makes the spacer "invisible" to taps
+                
                 BottomHUDView(gameManager: gameManager)
             }
             .edgesIgnoringSafeArea(.all)

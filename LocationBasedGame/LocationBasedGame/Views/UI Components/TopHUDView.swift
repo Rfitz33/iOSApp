@@ -54,7 +54,7 @@ struct TopHUDView: View {
                 
                 if gameManager.homeBase != nil {
                     Button(action: onHomeButtonTap) {
-                        Image("starterHome")
+                        Image(gameManager.sanctumImageName)
                             .resizable().scaledToFit().frame(width: 32, height: 32)
                     }
                     .buttonStyle(MapControlButton(isActive: cameraTrackingMode == .homeBase))

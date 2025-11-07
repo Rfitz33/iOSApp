@@ -16,10 +16,6 @@ struct GameMapView: View {
     @State private var playerAnnotation = PlayerAnnotation(coordinate: kCLLocationCoordinate2DInvalid)
     @State private var nodeToFetch: ResourceNode? = nil
     var onUserInteraction: () -> Void
-    // Needed?
-//    @Binding var cameraPosition: MapCameraPosition
-//    let currentMapHeading: CLLocationDirection
-    // ----------
     
     // --- State for Toasts ---
     @State private var feedbackMessage: String? = nil
@@ -191,17 +187,17 @@ private struct MapViewRepresentable: UIViewRepresentable {
         mapView.preferredConfiguration = MKStandardMapConfiguration(elevationStyle: .realistic)
         
         let compass = MKCompassButton(mapView: mapView)
-        let trackingButton = MKUserTrackingButton(mapView: mapView)
+//        let trackingButton = MKUserTrackingButton(mapView: mapView)
         mapView.addSubview(compass)
-        mapView.addSubview(trackingButton)
+//        mapView.addSubview(trackingButton)
         
         compass.translatesAutoresizingMaskIntoConstraints = false
-        trackingButton.translatesAutoresizingMaskIntoConstraints = false
+//        trackingButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             compass.topAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.topAnchor, constant: 10),
-            compass.trailingAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.trailingAnchor, constant: -10),
-            trackingButton.topAnchor.constraint(equalTo: compass.bottomAnchor, constant: 10),
-            trackingButton.trailingAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.trailingAnchor, constant: -10)
+            compass.trailingAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.trailingAnchor, constant: -10)
+//            trackingButton.topAnchor.constraint(equalTo: compass.bottomAnchor, constant: 10),
+//            trackingButton.trailingAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.trailingAnchor, constant: -10)
         ])
         
         mapView.showsUserLocation = false
@@ -241,7 +237,7 @@ private struct MapViewRepresentable: UIViewRepresentable {
         var parent: MapViewRepresentable
         init(_ parent: MapViewRepresentable) { self.parent = parent }
         
-        // --- THE FIX: A single, robust function to sync ALL annotations ---
+        // --- A single, robust function to sync ALL annotations ---
         func syncAllAnnotations(to mapView: MKMapView) {
             // 1. Sync the Player
             syncPlayerAnnotation(to: mapView)
@@ -283,35 +279,40 @@ private struct MapViewRepresentable: UIViewRepresentable {
         }
         
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-            // This implementation is now correct and final
+            // This part for the PlayerAnnotation is correct and unchanged.
             if annotation is PlayerAnnotation {
                 return mapView.dequeueReusableAnnotationView(withIdentifier: PlayerAnnotationView.reuseID, for: annotation)
             }
+            // This is the block for your Resource Nodes.
             else if let resAnn = annotation as? ResourceAnnotation {
                 let reuseID = "res"
-                let view: HostingAnnotationView<GameMapView.ResourceNodeAnnotationInnerView>
-                if let dequeuedView = mapView.dequeueReusableAnnotationView(withIdentifier: reuseID) as? HostingAnnotationView<GameMapView.ResourceNodeAnnotationInnerView> {
-                    view = dequeuedView
-                    view.annotation = annotation
-                } else {
-                    view = HostingAnnotationView(annotation: annotation, reuseIdentifier: reuseID)
-                }
-                view.set(rootView: GameMapView.ResourceNodeAnnotationInnerView(node: resAnn.node, onTapAction: {}))
+                // This part is the same
+                let view = mapView.dequeueReusableAnnotationView(withIdentifier: reuseID, for: annotation) as! HostingAnnotationView<ResourceNodeAnnotationInnerView>
+                
+                // --- THIS IS THE NEW LINE ---
+                // This ensures resource nodes are drawn on top of the player.
+                view.displayPriority = .defaultHigh
+                
+                // This part is the same
+                view.set(rootView: ResourceNodeAnnotationInnerView(node: resAnn.node, onTapAction: {}))
                 return view
             }
+            // This is the block for your Home Base.
             else if let homeAnn = annotation as? HomeBaseAnnotation {
                 let reuseID = "home"
-                typealias HomeAnnotationContentView = AnyView
-                let view: HostingAnnotationView<HomeAnnotationContentView>
-                if let dequeuedView = mapView.dequeueReusableAnnotationView(withIdentifier: reuseID) as? HostingAnnotationView<HomeAnnotationContentView> {
-                    view = dequeuedView
-                    view.annotation = annotation
-                } else {
-                    view = HostingAnnotationView(annotation: annotation, reuseIdentifier: reuseID)
-                }
+                // This part is the same
+                let view = mapView.dequeueReusableAnnotationView(withIdentifier: reuseID, for: annotation) as! HostingAnnotationView<AnyView>
+                
+                // --- THIS IS THE NEW LINE ---
+                // .required is even higher, perfect for unique items like the home base.
+                view.displayPriority = .required
+                
+                // This part is the same
                 view.set(rootView: AnyView(homeAnnotationView(for: homeAnn)))
                 return view
             }
+            
+            // This part is the same
             return nil
         }
         
@@ -319,12 +320,16 @@ private struct MapViewRepresentable: UIViewRepresentable {
         @ViewBuilder
         private func homeAnnotationView(for annotation: HomeBaseAnnotation) -> some View {
             VStack(spacing: 4) {
-                Image("starterHome")
-                    .resizable().renderingMode(.original).aspectRatio(contentMode: .fit)
-                    .frame(width: 60, height: 60).shadow(radius: 3)
+                // Use the new dynamic image name from the GameManager
+                Image(parent.gameManager.sanctumImageName)
+                    .resizable()
+                    .renderingMode(.original)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 96, height: 96)
+                    .shadow(radius: 3)
+                
                 if parent.gameManager.isPlayerNearHomeBase {
-                    Button("Enter Sanctum") {
-                        // **FIXED**: This now correctly accesses the binding
+                    Button("Enter") {
                         self.parent.showingHomeBaseViewAsFullScreen = true
                     }
                     .padding(.horizontal, 8).padding(.vertical, 4)
@@ -353,9 +358,21 @@ private struct MapViewRepresentable: UIViewRepresentable {
         }
         
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+            // This is a best-practice line. It immediately deselects the annotation
+            // so that it can be tapped again right away.
             mapView.deselectAnnotation(view.annotation, animated: false)
+            
+            // Check if the tapped annotation was a Resource Node
             if let resAnn = view.annotation as? ResourceAnnotation {
+                // If so, call the closure that triggers your handleNodeTap logic in SwiftUI.
                 parent.nodeTapAction(resAnn.node)
+            }
+            // Check if the tapped annotation was the Home Base
+            else if view.annotation is HomeBaseAnnotation {
+                // If so, and if the player is near, trigger the full-screen view.
+                if parent.gameManager.isPlayerNearHomeBase {
+                    parent.showingHomeBaseViewAsFullScreen = true
+                }
             }
         }
         
@@ -363,6 +380,7 @@ private struct MapViewRepresentable: UIViewRepresentable {
              let view = mapView.subviews.first(where: { $0 is UIScrollView }) as? UIScrollView
              if view?.isDragging == true { parent.onUserInteraction() }
         }
+        
         
         func syncAnnotations(to mapView: MKMapView) {
             // Get the current annotations from the map, excluding the player which is managed separately.

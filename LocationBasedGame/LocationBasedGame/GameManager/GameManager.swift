@@ -29,7 +29,7 @@ class GameManager: ObservableObject {
 //    @Published var sanctumComponentStorage: [ComponentType: Int] = [:] { didSet { saveComponents() } }
 //    @Published var sanctumItemStorage: [ItemType: Int] = [:] { didSet { saveItemInventory(); updateTotalResourceLoads() } } // Bags affect load
     @Published var currentToolDurability: [ItemType: Int] = [:] { didSet { saveToolDurability() } }
-    @Published var activeBaseUpgrades: Set<BaseUpgradeType> = [] { didSet { saveBaseUpgradesState(); updateTotalResourceLoads() } }
+    @Published var activeBaseUpgrades: Set<BaseUpgradeType> = [] { didSet { saveBaseUpgradesState(); updateTotalResourceLoads(); updateSanctumTier() } }
     
     @Published var playerSkillsXP: [SkillType: Int] = [:] { didSet { saveSkillsState() } }
     @Published var playerSkillLevels: [SkillType: Int] = [:] { didSet { /* May not need a separate save if levels are derived */ } }
@@ -66,6 +66,14 @@ class GameManager: ObservableObject {
     
     // Equipment & Bonuses
     var activeStatBonuses: [PlayerStat: Double] = [:]
+    
+    /// The current tier of the Sanctum, calculated from active upgrades.
+    @Published var currentSanctumTier: Int = 1
+   
+   /// The corresponding image asset name for the current Sanctum tier.
+    var sanctumImageName: String {
+        return "T\(currentSanctumTier)_sanctum"
+    }
     
     // --- Aviary & Pet Properties ---
     @Published var ownedCreatures: [Creature] = [] { didSet { saveCreaturesState() } }
@@ -104,11 +112,11 @@ class GameManager: ObservableObject {
     let scoutGatherAmount: Int = 1 // Example: Gather 1 unit of a resource
     let scoutStateStorageKey = "gameManager_scoutState_v1" // Use a versioned key
     let aviaryIncubationSlots: Int = 1 // Start with 1 slot
-    let resourceSpawnRadius: Double = 150 // meters (e.g., spawn within 150m of player)
+    let resourceSpawnRadius: Double = 100 // meters (e.g., spawn within 150m of player)
     let maxResourceNodes: Int = 10 // Max number of nodes on map at once (for simplicity)
-    let gatherDistanceThreshold: Double = 125 // meters (must be within 100m to gather)
-    let minDistanceBetweenNodes: Double = 30.0 // meters - Minimum distance between any two resource nodes
-    let minDistanceFromBase: Double = 50.0   // meters - Minimum distance from home base for a resource node
+    let gatherDistanceThreshold: Double = 40 // meters (must be within 100m to gather)
+    let minDistanceBetweenNodes: Double = 20.0 // meters - Minimum distance between any two resource nodes
+    let minDistanceFromBase: Double = 20.0   // meters - Minimum distance from home base for a resource node
     let levelUpPublisher = PassthroughSubject<LevelUpEvent, Never>()
     let questProgressPublisher = PassthroughSubject<QuestProgressEvent, Never>()
     let skillLevelCap = 50 // Already here, good.
@@ -150,7 +158,7 @@ class GameManager: ObservableObject {
     
     
     @Published var isSettingHomeBaseMode: Bool = false // To toggle the UI for setting base
-    let homeBaseEnterProximity: Double = 10000000.0 // meters (e.g., must be within 50m to "enter")
+    let homeBaseEnterProximity: Double = 10000000.0 // meters (e.g., must be within 40m to "enter")
     
     let allUpgrades: [UpgradeDefinition] = [
         UpgradeDefinition(
@@ -282,6 +290,7 @@ class GameManager: ObservableObject {
         print("GameManager initializing...")
         loadHomeBase()
         loadBaseUpgradesState()
+        updateSanctumTier()
         
         loadInventory()
         loadComponents()
@@ -328,6 +337,28 @@ class GameManager: ObservableObject {
         } else {
             self.updatePlayerProximityToHomeBase(playerLocation: nil)
         }
+    }
+    
+    private func updateSanctumTier() {
+        // Define the sets of upgrades required for each tier progression
+        let tier2Upgrades: Set<BaseUpgradeType> = [.basicForge, .woodworkingShop, .tanningRack, .apothecaryStand]
+        let tier3Upgrades: Set<BaseUpgradeType> = [.basicStorehouse, .fletchingWorkshop, .scoutsQuarters, .alchemyLab]
+        let tier4Upgrades: Set<BaseUpgradeType> = [.aviary, .garden, .watchtower]
+        
+        // Check for tiers in descending order to find the highest achieved tier
+        if activeBaseUpgrades.isSuperset(of: tier2Upgrades) &&
+           activeBaseUpgrades.isSuperset(of: tier3Upgrades) &&
+           activeBaseUpgrades.isSuperset(of: tier4Upgrades) {
+            currentSanctumTier = 4
+        } else if activeBaseUpgrades.isSuperset(of: tier2Upgrades) &&
+                  activeBaseUpgrades.isSuperset(of: tier3Upgrades) {
+            currentSanctumTier = 3
+        } else if activeBaseUpgrades.isSuperset(of: tier2Upgrades) {
+            currentSanctumTier = 2
+        } else {
+            currentSanctumTier = 1
+        }
+        print("Sanctum tier updated to: \(currentSanctumTier)")
     }
     
     // --- Centralized function to add messages ---
